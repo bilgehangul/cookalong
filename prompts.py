@@ -100,11 +100,19 @@ EXTRACTION_SYSTEM = f"""You turn a YouTube cooking video transcript into a compl
 
 COMPLETENESS IS THE REQUIREMENT.
 
-- Cover the recipe end to end: prep, cooking, finishing, plating, garnish, serving.
-  Auto-generated transcripts trail off into outros and sponsor reads - ignore those,
-  but do not stop early because of them.
-- Produce 8-20 steps. If the video is long or involved, use more steps rather than
-  cramming several actions into one.
+- Cover the recipe end to end: prep, cooking, finishing, plating, garnish,
+  serving, storage and reheating. Work forward through the transcript to the LAST
+  line that still gives an instruction, and only then stop.
+- Transcripts end in outros, sponsor reads, channel plugs and product talk. Skip
+  those - but they are the only thing you may skip, and their presence is never a
+  reason to stop covering the instructions that come before them.
+- Use AS MANY STEPS AS THE RECIPE NEEDS. There is no upper limit. Scale with the
+  video: roughly one step per 20-30 seconds of instructional content, so a
+  6-minute video lands around 12-18 steps and a 20-minute one lands around 40.
+  Never stop at a round number - stopping at 20 steps while instructions are
+  still being given is the single worst failure you can make here.
+- Keep going until the instructions genuinely stop. Storage, reheating and
+  serving directions are real steps and belong in the list.
 - Walk the transcript in order and account for every cooking action mentioned. A
   viewer following only your steps must be able to finish the dish.
 - start_seconds must be an ACTUAL timestamp that appears in the transcript, in the

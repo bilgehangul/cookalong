@@ -38,6 +38,18 @@
                 rgba(255,157,77,.20) 0%, rgba(255,157,77,.07) 45%, transparent 72%);
   }
   main { position: relative; }
+  .player-frame {
+    position: relative; width: 100%; margin: 0 auto;
+    aspect-ratio: 16 / 9; max-height: 46vh;
+    /* aspect-ratio sets width from height once max-height binds, keeping 16:9 */
+    max-width: calc(46vh * 16 / 9);
+    border-radius: .75rem; overflow: hidden; background: #000;
+  }
+  /* the API swaps #player for an iframe carrying the same id, so target both */
+  .player-frame > #player, .player-frame > iframe {
+    position: absolute; inset: 0; width: 100% !important; height: 100% !important;
+    border: 0;
+  }
   .step-card { border-left: 3px solid transparent; }
   .step-active { border-left-color: #ffb23f; background: #33291d; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -137,7 +149,7 @@
 
   <section id="view-cook" hidden>
     <div class="sticky top-16 z-30 bg-[#1c1714] pt-2 pb-4 -mx-4 px-4">
-      <div class="aspect-video w-full rounded-xl overflow-hidden bg-black"><div id="player"></div></div>
+      <div class="player-frame"><div id="player"></div></div>
     </div>
     <header class="mt-4 mb-8">
       <h1 id="cook-title" class="text-4xl font-bold tracking-tight"></h1>
@@ -275,8 +287,21 @@ try {
 
 const CATEGORIES = ["Produce","Protein","Dairy","Pantry","Spices","Other"];
 
-// Filled in once these are verified to return transcripts; the row hides while empty.
-const STARTER_VIDEOS = [];
+// Recipes baked at build time into static/recipes.json. They carry real
+// timestamps from each video's transcript, so the whole app - click-to-seek,
+// pantry check, library filters - runs with no backend at all.
+let STARTER_VIDEOS = [];
+
+async function loadStarters() {
+  try {
+    const response = await fetch("recipes.json", { cache: "no-cache" });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (Array.isArray(data)) { STARTER_VIDEOS = data; renderRecent(); }
+  } catch (err) {
+    console.warn("starter recipes unavailable", err);
+  }
+}
 
 let pantry   = load(K.pantry, SEED_PANTRY.slice());
 let recipes  = load(K.recipes, []);
@@ -486,10 +511,17 @@ function renderRecent() {
 
   const starters = el("starter-grid");
   starters.innerHTML = "";
-  STARTER_VIDEOS.forEach(function (video) {
-    starters.appendChild(videoCard(video, function () { loadRecipe(video.url); }));
+  const saved = recipes.map(function (r) { return r.video_id; });
+  const unopened = STARTER_VIDEOS.filter(function (v) {
+    return saved.indexOf(v.video_id) === -1;
   });
-  el("starter-row").hidden = STARTER_VIDEOS.length === 0;
+  unopened.forEach(function (video) {
+    starters.appendChild(videoCard(video, function () {
+      saveRecipe(video);
+      startCheck(video);
+    }));
+  });
+  el("starter-row").hidden = unopened.length === 0;
 }
 
 const STATUS_STEPS = ["Fetching transcript…", "Reading the recipe…"];
@@ -897,6 +929,7 @@ el("lib-search").addEventListener("input", renderLibrary);
 /* ---------- init ---------- */
 renderRecent();
 showView("paste");
+loadStarters();
 })();
 </script>
 </body>
