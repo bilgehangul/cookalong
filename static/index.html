@@ -1,1 +1,783 @@
-<h1>CookAlong</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CookAlong</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .chip {
+    display: inline-flex; align-items: center; gap: .45rem;
+    min-height: 44px; padding: 0 1rem; border-radius: 9999px;
+    font-size: 1rem; font-weight: 500; line-height: 1;
+    border: 1px solid transparent; cursor: pointer;
+    transition: background-color .12s, border-color .12s, color .12s;
+  }
+  .chip-have { background: #f0a83c; color: #1b1410; border-color: #f0a83c; }
+  .chip-have:hover { background: #ffc061; }
+  .chip-out { background: transparent; color: #b6ada4; border-color: #45403a; }
+  .chip-out:hover { border-color: #6d655c; color: #e8e2db; }
+  .chip-need { background: transparent; color: #f0a83c; border-color: #7a5a26; }
+  .term {
+    color: #f0a83c; text-decoration: underline; text-underline-offset: 3px;
+    font: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  }
+  .term:hover { color: #ffc061; }
+  .step-card { border-left: 3px solid transparent; }
+  .step-active { border-left-color: #f0a83c; background: #241d16; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #3a342e; border-radius: 5px; }
+</style>
+</head>
+<body class="bg-[#14110f] text-stone-100 min-h-screen">
+
+<nav class="sticky top-0 z-40 bg-[#14110f]/95 backdrop-blur border-b border-stone-800">
+  <div class="max-w-5xl mx-auto px-4 h-16 flex items-center gap-6">
+    <span class="text-xl font-bold text-amber-400 mr-2">CookAlong</span>
+    <button data-nav="paste"   class="nav text-lg font-medium text-stone-400 hover:text-stone-100">Cook</button>
+    <button data-nav="library" class="nav text-lg font-medium text-stone-400 hover:text-stone-100">My Recipes</button>
+    <button data-nav="pantry"  class="nav text-lg font-medium text-stone-400 hover:text-stone-100">My Pantry</button>
+  </div>
+</nav>
+
+<main class="max-w-5xl mx-auto px-4 py-8">
+
+  <section id="view-paste">
+    <h1 class="text-4xl font-bold mb-2">Cook along with any recipe video</h1>
+    <p class="text-stone-400 mb-8 text-lg">Paste a YouTube link. We pull the transcript and turn it into steps you can tap.</p>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input id="url-input" type="url" placeholder="https://www.youtube.com/watch?v=..."
+             class="flex-1 bg-[#1e1a16] border border-stone-700 rounded-xl px-4 py-4 text-lg placeholder-stone-600 focus:outline-none focus:border-amber-500">
+      <button id="load-btn" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-lg rounded-xl px-8 py-4 disabled:opacity-50">Load Recipe</button>
+    </div>
+    <p id="paste-status" class="mt-4 text-amber-400 text-lg" hidden></p>
+    <p id="paste-error" class="mt-4 text-red-400 text-lg" hidden></p>
+
+    <div id="starter-row" hidden class="mt-10">
+      <h2 class="text-sm uppercase tracking-wide text-stone-500 mb-3">Try one of these</h2>
+      <div id="starter-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+    </div>
+    <div id="recent-row" hidden class="mt-10">
+      <h2 class="text-sm uppercase tracking-wide text-stone-500 mb-3">Recently saved</h2>
+      <div id="recent-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+    </div>
+  </section>
+
+  <section id="view-check" hidden>
+    <div id="stage-a" hidden class="py-10">
+      <p id="stage-a-count" class="text-center text-stone-500 mb-6 text-lg"></p>
+      <div class="max-w-xl mx-auto bg-[#1e1a16] border border-stone-800 rounded-2xl p-10 text-center">
+        <p class="text-stone-400 mb-2 text-lg">Do you have</p>
+        <p id="stage-a-item" class="text-4xl font-bold mb-10 capitalize"></p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <button id="have-yes" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-lg rounded-xl px-8 py-4">Yes, I have it</button>
+          <button id="have-no" class="border border-stone-600 hover:border-stone-400 text-stone-200 font-semibold text-lg rounded-xl px-8 py-4">No, I need it</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="stage-b" hidden>
+      <h1 class="text-3xl font-bold mb-1">Ingredient check</h1>
+      <p id="check-summary" class="text-stone-400 mb-8 text-lg"></p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <h2 class="text-lg font-semibold text-emerald-400 mb-4">You have these</h2>
+          <div id="have-list" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-amber-400 mb-4">You need these</h2>
+          <div id="need-list" class="space-y-4"></div>
+        </div>
+      </div>
+      <div class="mt-10">
+        <button id="start-cooking" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-lg rounded-xl px-8 py-4">Start Cooking &rarr;</button>
+        <p id="need-note" class="text-stone-500 mt-3" hidden>You can start now and grab the rest as you go.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-cook" hidden>
+    <div class="sticky top-16 z-30 bg-[#14110f] pt-2 pb-4 -mx-4 px-4">
+      <div class="aspect-video w-full rounded-xl overflow-hidden bg-black"><div id="player"></div></div>
+    </div>
+    <header class="mt-4 mb-8">
+      <h1 id="cook-title" class="text-3xl font-bold"></h1>
+      <button id="cook-channel" class="text-amber-400 hover:underline text-lg mt-1"></button>
+      <div id="cook-tags" class="flex flex-wrap gap-2 mt-4"></div>
+    </header>
+    <div id="steps-list" class="space-y-3"></div>
+  </section>
+
+  <section id="view-library" hidden>
+    <h1 class="text-3xl font-bold mb-6">My Recipes</h1>
+    <input id="lib-search" type="search" placeholder="Search title, channel, or ingredient"
+           class="w-full bg-[#1e1a16] border border-stone-700 rounded-xl px-4 py-3 mb-5 placeholder-stone-600 focus:outline-none focus:border-amber-500">
+    <div id="lib-tags" class="flex flex-wrap gap-2 mb-3"></div>
+    <div id="lib-channels" class="flex flex-wrap gap-2 mb-8"></div>
+    <div id="lib-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    <p id="lib-empty" hidden class="text-stone-500 text-lg py-16 text-center">No recipes yet &mdash; paste a YouTube link to get started.</p>
+  </section>
+
+  <section id="view-pantry" hidden>
+    <h1 class="text-3xl font-bold mb-2">My Pantry</h1>
+    <p id="pantry-summary" class="text-stone-400 text-lg"></p>
+    <div class="h-2 bg-stone-800 rounded-full mt-3 mb-8 overflow-hidden">
+      <div id="pantry-bar" class="h-full bg-amber-500 transition-all" style="width:0%"></div>
+    </div>
+    <div class="flex gap-3 mb-10">
+      <input id="pantry-add" type="text" placeholder="Add an ingredient&hellip;"
+             class="flex-1 bg-[#1e1a16] border border-stone-700 rounded-xl px-4 py-3 placeholder-stone-600 focus:outline-none focus:border-amber-500">
+      <button id="pantry-add-btn" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold rounded-xl px-6">Add</button>
+    </div>
+    <div id="pantry-sections" class="space-y-8"></div>
+    <footer class="mt-16 pt-6 border-t border-stone-800">
+      <button id="reset-all" class="text-stone-600 hover:text-red-400 text-sm">Reset all data</button>
+    </footer>
+  </section>
+
+</main>
+
+<script>
+(function () {
+"use strict";
+
+/* ---------- storage: every read wrapped, every key versioned ---------- */
+const K = {
+  pantry:   "cookalong:pantry:v1",
+  recipes:  "cookalong:recipes:v1",
+  progress: "cookalong:progress:v1",
+};
+
+function load(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed === null || parsed === undefined ? fallback : parsed;
+  } catch (err) {
+    console.warn("localStorage read failed for", key, err);
+    return fallback;
+  }
+}
+
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); }
+  catch (err) { console.warn("localStorage write failed for", key, err); }
+}
+
+const SEED_PANTRY = [
+  ["garlic","Produce"],["onion","Produce"],["ginger","Produce"],["lemon","Produce"],["carrot","Produce"],
+  ["eggs","Protein"],["chicken breast","Protein"],
+  ["butter","Dairy"],["milk","Dairy"],["parmesan","Dairy"],
+  ["rice","Pantry"],["pasta","Pantry"],["flour","Pantry"],["sugar","Pantry"],["soy sauce","Pantry"],
+  ["olive oil","Pantry"],["sesame oil","Pantry"],["vinegar","Pantry"],["canned tomatoes","Pantry"],
+  ["salt","Spices"],["black pepper","Spices"],["chili flakes","Spices"],["cumin","Spices"],["paprika","Spices"],
+].map(function (pair) { return { name: pair[0], have: true, category: pair[1] }; });
+
+// Seed on the key's ABSENCE, never on an empty array - otherwise "I have nothing"
+// gets overwritten on every reload.
+try {
+  if (localStorage.getItem(K.pantry) === null) save(K.pantry, SEED_PANTRY);
+} catch (err) { console.warn("could not seed pantry", err); }
+
+const CATEGORIES = ["Produce","Protein","Dairy","Pantry","Spices","Other"];
+
+// Filled in once these are verified to return transcripts; the row hides while empty.
+const STARTER_VIDEOS = [];
+
+let pantry   = load(K.pantry, SEED_PANTRY.slice());
+let recipes  = load(K.recipes, []);
+let progress = load(K.progress, {});
+if (!Array.isArray(pantry))  pantry = SEED_PANTRY.slice();
+if (!Array.isArray(recipes)) recipes = [];
+if (typeof progress !== "object" || progress === null) progress = {};
+
+let pantryTimer = null;
+function savePantrySoon() {
+  clearTimeout(pantryTimer);
+  pantryTimer = setTimeout(function () { save(K.pantry, pantry); }, 300);
+}
+
+/* ---------- helpers ---------- */
+const $  = function (sel) { return document.querySelector(sel); };
+const el = function (id)  { return document.getElementById(id); };
+
+function esc(text) {
+  const div = document.createElement("div");
+  div.textContent = text == null ? "" : String(text);
+  return div.innerHTML;
+}
+
+function mmss(seconds) {
+  const s = Math.max(0, Math.floor(seconds || 0));
+  return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+}
+
+function norm(name) { return String(name || "").trim().toLowerCase(); }
+
+function findPantry(name) {
+  const target = norm(name);
+  return pantry.find(function (item) { return norm(item.name) === target; }) || null;
+}
+
+/* ---------- the one chip component, used by pantry AND ingredient check ---------- */
+function makeChip(label, state, onClick) {
+  const button = document.createElement("button");
+  button.className = "chip " + (state === "have" ? "chip-have"
+                              : state === "need" ? "chip-need" : "chip-out");
+  button.innerHTML = (state === "have"
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    : "") + esc(label);
+  if (onClick) button.addEventListener("click", onClick);
+  return button;
+}
+
+/* ---------- view routing ---------- */
+const VIEWS = ["paste", "check", "cook", "library", "pantry"];
+function showView(name) {
+  VIEWS.forEach(function (view) {
+    const node = el("view-" + view);
+    if (node) node.hidden = view !== name;
+  });
+  document.querySelectorAll(".nav").forEach(function (button) {
+    const on = button.dataset.nav === name;
+    button.classList.toggle("text-amber-400", on);
+    button.classList.toggle("text-stone-400", !on);
+  });
+  window.scrollTo(0, 0);
+}
+
+document.querySelectorAll(".nav").forEach(function (button) {
+  button.addEventListener("click", function () {
+    const target = button.dataset.nav;
+    if (target === "pantry")  renderPantry();
+    if (target === "library") renderLibrary();
+    if (target === "paste")   renderRecent();
+    showView(target);
+  });
+});
+
+/* ---------- View 0: pantry ---------- */
+function renderPantry() {
+  const total  = pantry.length;
+  const stocked = pantry.filter(function (i) { return i.have; }).length;
+  el("pantry-summary").textContent = stocked + " of " + total + " stocked";
+  el("pantry-bar").style.width = (total ? (stocked / total) * 100 : 0) + "%";
+
+  const container = el("pantry-sections");
+  container.innerHTML = "";
+
+  CATEGORIES.forEach(function (category) {
+    const items = pantry.filter(function (i) { return (i.category || "Other") === category; });
+    if (!items.length) return;
+    const has = items.filter(function (i) { return i.have; }).length;
+
+    const section = document.createElement("div");
+    const header = document.createElement("div");
+    header.className = "flex items-baseline gap-3 mb-3";
+    header.innerHTML =
+      '<h2 class="text-lg font-semibold">' + esc(category) + '</h2>' +
+      '<span class="text-stone-500 text-sm">' + has + " of " + items.length + '</span>';
+
+    const all = document.createElement("button");
+    all.className = "text-sm text-stone-500 hover:text-amber-400 ml-auto";
+    all.textContent = "All";
+    all.onclick = function () { setCategory(category, true); };
+
+    const none = document.createElement("button");
+    none.className = "text-sm text-stone-500 hover:text-amber-400";
+    none.textContent = "None";
+    none.onclick = function () { setCategory(category, false); };
+
+    header.appendChild(all);
+    header.appendChild(none);
+    section.appendChild(header);
+
+    const grid = document.createElement("div");
+    grid.className = "flex flex-wrap gap-2";
+    items.forEach(function (item) {
+      grid.appendChild(makeChip(item.name, item.have ? "have" : "out", function () {
+        item.have = !item.have;
+        savePantrySoon();
+        renderPantry();            // repaint immediately, write debounced
+      }));
+    });
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
+
+function setCategory(category, have) {
+  pantry.forEach(function (item) {
+    if ((item.category || "Other") === category) item.have = have;
+  });
+  savePantrySoon();
+  renderPantry();
+}
+
+function addPantryItem(rawName) {
+  const name = norm(rawName);
+  if (!name) return;
+  const existing = findPantry(name);
+  if (existing) { existing.have = true; }           // toggle, never duplicate
+  else { pantry.push({ name: name, have: true, category: "Other" }); }
+  savePantrySoon();
+  renderPantry();
+}
+
+el("pantry-add-btn").onclick = function () {
+  addPantryItem(el("pantry-add").value);
+  el("pantry-add").value = "";
+};
+el("pantry-add").addEventListener("keydown", function (event) {
+  if (event.key === "Enter") { el("pantry-add-btn").click(); }
+});
+
+el("reset-all").onclick = function () {
+  if (!confirm("Clear your pantry, saved recipes, and progress?")) return;
+  try {
+    Object.keys(localStorage)
+      .filter(function (k) { return k.indexOf("cookalong:") === 0; })
+      .forEach(function (k) { localStorage.removeItem(k); });
+  } catch (err) { console.warn(err); }
+  pantry = SEED_PANTRY.slice();
+  recipes = [];
+  progress = {};
+  save(K.pantry, pantry);
+  renderPantry();
+};
+
+/* ---------- View 1: paste ---------- */
+function videoCard(recipe, onClick) {
+  const card = document.createElement("button");
+  card.className = "text-left bg-[#1e1a16] border border-stone-800 rounded-xl overflow-hidden hover:border-amber-600 transition";
+  card.innerHTML =
+    (recipe.thumbnail
+      ? '<img src="' + esc(recipe.thumbnail) + '" alt="" class="w-full aspect-video object-cover">'
+      : '<div class="w-full aspect-video bg-stone-800"></div>') +
+    '<div class="p-3">' +
+      '<p class="font-semibold leading-snug line-clamp-2">' + esc(recipe.title) + '</p>' +
+      '<p class="text-stone-500 text-sm mt-1">' + esc((recipe.channel || {}).name || "") + '</p>' +
+    '</div>';
+  card.onclick = onClick;
+  return card;
+}
+
+function renderRecent() {
+  const grid = el("recent-grid");
+  grid.innerHTML = "";
+  recipes.slice(0, 3).forEach(function (recipe) {
+    grid.appendChild(videoCard(recipe, function () { openRecipe(recipe); }));
+  });
+  el("recent-row").hidden = recipes.length === 0;
+
+  const starters = el("starter-grid");
+  starters.innerHTML = "";
+  STARTER_VIDEOS.forEach(function (video) {
+    starters.appendChild(videoCard(video, function () { loadRecipe(video.url); }));
+  });
+  el("starter-row").hidden = STARTER_VIDEOS.length === 0;
+}
+
+const STATUS_STEPS = ["Fetching transcript…", "Reading the recipe…"];
+
+async function loadRecipe(url) {
+  const status = el("paste-status");
+  const error  = el("paste-error");
+  error.hidden = true;
+  status.hidden = false;
+  status.textContent = STATUS_STEPS[0];
+  el("load-btn").disabled = true;
+
+  // The LLM call runs far longer than SerpApi - never leave a blank screen.
+  const advance = setTimeout(function () { status.textContent = STATUS_STEPS[1]; }, 2500);
+
+  try {
+    const demo = new URLSearchParams(location.search).get("demo") === "1";
+    const response = await fetch("/api/recipe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: url, demo: demo }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load that video.");
+    saveRecipe(data);
+    startCheck(data);
+  } catch (err) {
+    error.textContent = err.message;
+    error.hidden = false;
+  } finally {
+    clearTimeout(advance);
+    status.hidden = true;
+    el("load-btn").disabled = false;
+  }
+}
+
+el("load-btn").onclick = function () { loadRecipe(el("url-input").value); };
+el("url-input").addEventListener("keydown", function (event) {
+  if (event.key === "Enter") el("load-btn").click();
+});
+
+function saveRecipe(recipe) {
+  recipes = recipes.filter(function (r) { return r.video_id !== recipe.video_id; });
+  recipes.unshift(recipe);          // library caches full JSON - reopening costs 0 API calls
+  save(K.recipes, recipes);
+}
+
+/* ---------- View 2: ingredient check ---------- */
+let checkRecipe = null;
+let unknownQueue = [];
+let unknownTotal = 0;
+
+function startCheck(recipe) {
+  checkRecipe = recipe;
+  unknownQueue = (recipe.ingredients || [])
+    .map(function (ing) { return norm(ing.normalized || ing.name); })
+    .filter(function (name, index, list) {
+      return name && list.indexOf(name) === index && !findPantry(name);
+    });
+  unknownTotal = unknownQueue.length;
+  showView("check");
+  nextUnknown();
+}
+
+function nextUnknown() {
+  if (!unknownQueue.length) { el("stage-a").hidden = true; renderStageB(); return; }
+  el("stage-b").hidden = true;
+  el("stage-a").hidden = false;
+  el("stage-a-count").textContent =
+    (unknownTotal - unknownQueue.length + 1) + " of " + unknownTotal;
+  el("stage-a-item").textContent = unknownQueue[0];
+}
+
+function answerUnknown(have) {
+  const name = unknownQueue.shift();
+  const category = ((checkRecipe.ingredients || []).find(function (ing) {
+    return norm(ing.normalized || ing.name) === name;
+  }) || {}).category || "Other";
+  pantry.push({ name: name, have: have, category: category });  // answer once, never asked again
+  save(K.pantry, pantry);
+  nextUnknown();
+}
+
+el("have-yes").onclick = function () { answerUnknown(true); };
+el("have-no").onclick  = function () { answerUnknown(false); };
+
+let shopBoxes = {};
+
+function renderStageB() {
+  el("stage-a").hidden = true;
+  shopBoxes = {};
+  el("stage-b").hidden = false;
+
+  const names = (checkRecipe.ingredients || [])
+    .map(function (ing) { return norm(ing.normalized || ing.name); })
+    .filter(function (name, index, list) { return name && list.indexOf(name) === index; });
+
+  const have = names.filter(function (n) { const p = findPantry(n); return p && p.have; });
+  const need = names.filter(function (n) { const p = findPantry(n); return !p || !p.have; });
+
+  el("check-summary").textContent =
+    "You have " + have.length + " of " + names.length + " ingredients.";
+  el("need-note").hidden = need.length === 0;
+
+  const haveList = el("have-list");
+  haveList.innerHTML = "";
+  have.forEach(function (name) {
+    haveList.appendChild(makeChip(name, "have", function () { flip(name, false); }));
+  });
+
+  const needList = el("need-list");
+  needList.innerHTML = "";
+  need.forEach(function (name) {
+    const row = document.createElement("div");
+    row.appendChild(makeChip(name, "need", function () { flip(name, true); }));
+    const links = document.createElement("div");
+    links.className = "mt-2 ml-1 space-y-1 text-sm";
+    shopBoxes[name] = links;      // hold the node; no attribute-selector escaping needed
+    row.appendChild(links);
+    needList.appendChild(row);
+  });
+
+  if (need.length) fetchShopLinks(need);
+}
+
+function flip(name, have) {
+  const item = findPantry(name);
+  if (item) { item.have = have; }
+  else { pantry.push({ name: name, have: have, category: "Other" }); }
+  save(K.pantry, pantry);
+  renderStageB();
+}
+
+async function fetchShopLinks(items) {
+  try {
+    const response = await fetch("/api/shop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: items.slice(0, 8) }),
+    });
+    const data = await response.json();
+    Object.keys(data.results || {}).forEach(function (item) {
+      const box = shopBoxes[item];
+      if (!box) return;
+      box.innerHTML = (data.results[item] || []).map(function (hit) {
+        return '<a href="' + esc(hit.url) + '" target="_blank" rel="noopener" ' +
+               'class="block text-stone-400 hover:text-amber-400 truncate">' +
+               esc(hit.title) + ' <span class="text-stone-600">' + esc(hit.source) + '</span></a>';
+      }).join("");
+    });
+  } catch (err) {
+    console.warn("shop links unavailable", err);
+  }
+}
+
+el("start-cooking").onclick = function () { openRecipe(checkRecipe); };
+
+/* ---------- View 3: cook along ---------- */
+let player = null;
+let ytReady = false;
+let pendingVideoId = null;
+let pollTimer = null;
+let activeIndex = -1;
+let cookRecipe = null;
+
+window.onYouTubeIframeAPIReady = function () {
+  ytReady = true;
+  if (pendingVideoId) { buildPlayer(pendingVideoId); pendingVideoId = null; }
+};
+
+function buildPlayer(videoId) {
+  if (!ytReady) { pendingVideoId = videoId; return; }
+  if (player && player.loadVideoById) { player.loadVideoById(videoId); startPoll(); return; }
+  player = new YT.Player("player", {
+    videoId: videoId,
+    playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+    events: { onReady: startPoll },
+  });
+}
+
+function seekTo(seconds) {
+  if (!player || !player.seekTo) return;
+  player.seekTo(seconds, true);
+  player.playVideo();
+}
+
+function startPoll() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(function () {
+    if (!player || typeof player.getCurrentTime !== "function") return;
+    const now = player.getCurrentTime();
+    if (typeof now !== "number") return;
+    highlight(now);
+  }, 500);
+}
+
+function highlight(now) {
+  const steps = (cookRecipe && cookRecipe.steps) || [];
+  let index = -1;
+  for (let i = 0; i < steps.length; i++) {
+    if (steps[i].start_seconds <= now) index = i; else break;
+  }
+  if (index === activeIndex) return;
+  activeIndex = index;
+  document.querySelectorAll("#steps-list .step-card").forEach(function (card, i) {
+    const on = i === index;
+    card.classList.toggle("step-active", on);
+    if (on && card.scrollIntoView) card.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
+
+function openRecipe(recipe) {
+  cookRecipe = recipe;
+  activeIndex = -1;
+  showView("cook");
+
+  el("cook-title").textContent = recipe.title;
+  const channelName = (recipe.channel || {}).name || "Unknown";
+  el("cook-channel").textContent = channelName;
+  el("cook-channel").onclick = function () {
+    channelFilter = channelName;
+    renderLibrary();
+    showView("library");
+  };
+
+  const tags = el("cook-tags");
+  tags.innerHTML = "";
+  (recipe.tags || []).forEach(function (tag) {
+    const span = document.createElement("span");
+    span.className = "px-3 py-1 rounded-full bg-stone-800 text-stone-300 text-sm";
+    span.textContent = tag;
+    tags.appendChild(span);
+  });
+
+  renderSteps(recipe);
+  buildPlayer(recipe.video_id);
+}
+
+function stepTextHtml(step) {
+  let html = esc(step.text);
+  (step.terms || []).forEach(function (term) {
+    const word = esc(term.term);
+    if (!word) return;
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp("\\b(" + escaped + ")\\b", "i");
+    if (!pattern.test(html)) return;
+    html = html.replace(pattern,
+      '<button class="term" data-seek="' + Number(term.start_seconds || 0) + '">$1</button>');
+  });
+  return html;
+}
+
+function renderSteps(recipe) {
+  const list = el("steps-list");
+  list.innerHTML = "";
+  const done = progress[recipe.video_id] || [];
+
+  (recipe.steps || []).forEach(function (step) {
+    const card = document.createElement("div");
+    card.className = "step-card bg-[#1c1815] rounded-xl p-5 pl-6 cursor-pointer hover:bg-[#221d18]";
+
+    const checked = done.indexOf(step.index) !== -1;
+    card.innerHTML =
+      '<div class="flex gap-4 items-start">' +
+        '<input type="checkbox" class="step-check mt-1.5 w-5 h-5 accent-amber-500 shrink-0"' +
+          (checked ? " checked" : "") + '>' +
+        '<div class="flex-1 min-w-0">' +
+          '<p class="text-lg leading-relaxed"><span class="text-amber-500 font-semibold mr-2">' +
+            step.index + '.</span>' + stepTextHtml(step) + '</p>' +
+        '</div>' +
+        '<span class="text-stone-500 text-sm shrink-0 tabular-nums">' +
+          mmss(step.start_seconds) + '</span>' +
+      '</div>';
+
+    if (step.detail) {
+      const wrap = document.createElement("div");
+      wrap.className = "ml-9 mt-3";
+      const toggle = document.createElement("button");
+      toggle.className = "text-amber-400 hover:text-amber-300 text-sm font-medium";
+      toggle.textContent = "How do I do this?";
+      const body = document.createElement("div");
+      body.className = "detail-body hidden mt-3 space-y-2 text-stone-300 leading-relaxed";
+      body.innerHTML =
+        '<p>' + esc(step.detail.how) + '</p>' +
+        (step.detail.watch_for
+          ? '<p class="text-stone-500 text-sm">&#9888; ' + esc(step.detail.watch_for) + '</p>' : "") +
+        (step.detail.duration_hint
+          ? '<p class="text-stone-500 text-sm">' + esc(step.detail.duration_hint) + '</p>' : "");
+      toggle.onclick = function (event) {
+        event.stopPropagation();
+        const opening = body.classList.contains("hidden");
+        // One open at a time - this is the depth layer, not the default view.
+        list.querySelectorAll(".detail-body").forEach(function (n) { n.classList.add("hidden"); });
+        if (opening) body.classList.remove("hidden");
+      };
+      wrap.appendChild(toggle);
+      wrap.appendChild(body);
+      card.appendChild(wrap);
+    }
+
+    card.addEventListener("click", function () { seekTo(step.start_seconds); });
+
+    const box = card.querySelector(".step-check");
+    box.addEventListener("click", function (event) {
+      event.stopPropagation();          // ticking a step must not also seek
+      const current = progress[recipe.video_id] || [];
+      progress[recipe.video_id] = box.checked
+        ? current.concat([step.index])
+        : current.filter(function (n) { return n !== step.index; });
+      save(K.progress, progress);
+    });
+
+    card.querySelectorAll(".term").forEach(function (button) {
+      button.addEventListener("click", function (event) {
+        event.stopPropagation();        // don't also fire the parent step handler
+        seekTo(Number(button.dataset.seek));
+      });
+    });
+
+    list.appendChild(card);
+  });
+}
+
+/* ---------- View 4: library ---------- */
+let tagFilters = [];
+let channelFilter = null;
+
+function renderLibrary() {
+  const query = norm(el("lib-search").value);
+
+  const tagCounts = {}, channelCounts = {};
+  recipes.forEach(function (recipe) {
+    (recipe.tags || []).forEach(function (tag) { tagCounts[tag] = (tagCounts[tag] || 0) + 1; });
+    const name = (recipe.channel || {}).name;
+    if (name) channelCounts[name] = (channelCounts[name] || 0) + 1;
+  });
+
+  const tagRow = el("lib-tags");
+  tagRow.innerHTML = "";
+  Object.keys(tagCounts).sort().forEach(function (tag) {
+    const on = tagFilters.indexOf(tag) !== -1;
+    tagRow.appendChild(makeChip(tag + " " + tagCounts[tag], on ? "have" : "out", function () {
+      tagFilters = on ? tagFilters.filter(function (t) { return t !== tag; })
+                      : tagFilters.concat([tag]);
+      renderLibrary();
+    }));
+  });
+
+  const channelRow = el("lib-channels");
+  channelRow.innerHTML = "";
+  Object.keys(channelCounts).sort().forEach(function (name) {
+    const on = channelFilter === name;
+    channelRow.appendChild(makeChip(name + " " + channelCounts[name], on ? "have" : "out", function () {
+      channelFilter = on ? null : name;      // single-select
+      renderLibrary();
+    }));
+  });
+
+  const matches = recipes.filter(function (recipe) {
+    // tags are AND-combined
+    if (tagFilters.length && !tagFilters.every(function (t) {
+      return (recipe.tags || []).indexOf(t) !== -1;
+    })) return false;
+    if (channelFilter && (recipe.channel || {}).name !== channelFilter) return false;
+    if (!query) return true;
+    const haystack = [
+      recipe.title,
+      (recipe.channel || {}).name,
+      (recipe.ingredients || []).map(function (i) { return i.name; }).join(" "),
+    ].join(" ").toLowerCase();
+    return haystack.indexOf(query) !== -1;
+  });
+
+  const grid = el("lib-grid");
+  grid.innerHTML = "";
+  matches.forEach(function (recipe) {
+    const card = videoCard(recipe, function () { openRecipe(recipe); });   // zero API calls
+    const meta = document.createElement("div");
+    meta.className = "px-3 pb-3 -mt-1 flex flex-wrap gap-1.5 items-center";
+    meta.innerHTML = (recipe.tags || []).slice(0, 3).map(function (tag) {
+      return '<span class="px-2 py-0.5 rounded-full bg-stone-800 text-stone-400 text-xs">' +
+             esc(tag) + '</span>';
+    }).join("") +
+      '<span class="text-stone-600 text-xs ml-auto">' +
+      ((recipe.steps || []).length) + ' steps</span>';
+    card.appendChild(meta);
+    grid.appendChild(card);
+  });
+
+  el("lib-empty").hidden = recipes.length !== 0;
+}
+
+el("lib-search").addEventListener("input", renderLibrary);
+
+/* ---------- init ---------- */
+renderRecent();
+showView("paste");
+})();
+</script>
+</body>
+</html>
