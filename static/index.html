@@ -124,15 +124,14 @@
 
   <section id="view-pantry" hidden>
     <h1 class="text-3xl font-bold mb-2">My Pantry</h1>
-    <p id="pantry-summary" class="text-stone-400 text-lg"></p>
-    <div class="h-2 bg-stone-800 rounded-full mt-3 mb-8 overflow-hidden">
-      <div id="pantry-bar" class="h-full bg-amber-500 transition-all" style="width:0%"></div>
-    </div>
-    <div class="flex gap-3 mb-10">
+    <p id="pantry-summary" class="text-stone-400 text-lg mb-8"></p>
+    <div class="flex flex-col sm:flex-row gap-3 mb-4">
       <input id="pantry-add" type="text" placeholder="Add an ingredient&hellip;"
              class="flex-1 bg-[#1e1a16] border border-stone-700 rounded-xl px-4 py-3 placeholder-stone-600 focus:outline-none focus:border-amber-500">
-      <button id="pantry-add-btn" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold rounded-xl px-6">Add</button>
+      <button id="pantry-add-btn" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold rounded-xl px-6 py-3">Add</button>
     </div>
+    <input id="pantry-filter" type="search" placeholder="Filter the list&hellip;"
+           class="w-full bg-[#1e1a16] border border-stone-700 rounded-xl px-4 py-3 mb-10 placeholder-stone-600 focus:outline-none focus:border-amber-500">
     <div id="pantry-sections" class="space-y-8"></div>
     <footer class="mt-16 pt-6 border-t border-stone-800">
       <button id="reset-all" class="text-stone-600 hover:text-red-400 text-sm">Reset all data</button>
@@ -173,14 +172,65 @@ function save(key, value) {
   catch (err) { console.warn("localStorage write failed for", key, err); }
 }
 
-const SEED_PANTRY = [
-  ["garlic","Produce"],["onion","Produce"],["ginger","Produce"],["lemon","Produce"],["carrot","Produce"],
-  ["eggs","Protein"],["chicken breast","Protein"],
-  ["butter","Dairy"],["milk","Dairy"],["parmesan","Dairy"],
-  ["rice","Pantry"],["pasta","Pantry"],["flour","Pantry"],["sugar","Pantry"],["soy sauce","Pantry"],
-  ["olive oil","Pantry"],["sesame oil","Pantry"],["vinegar","Pantry"],["canned tomatoes","Pantry"],
-  ["salt","Spices"],["black pepper","Spices"],["chili flakes","Spices"],["cumin","Spices"],["paprika","Spices"],
-].map(function (pair) { return { name: pair[0], have: true, category: pair[1] }; });
+// A browsable catalogue, not a starter list. Third field = stocked by default,
+// so the grid is full enough to be useful without pretending you own everything.
+const CATALOG = [
+  // Produce
+  ["garlic","Produce",true],["onion","Produce",true],["red onion","Produce",false],
+  ["shallot","Produce",false],["scallions","Produce",false],["ginger","Produce",true],
+  ["lemon","Produce",true],["lime","Produce",false],["carrot","Produce",true],
+  ["celery","Produce",false],["potato","Produce",false],["sweet potato","Produce",false],
+  ["tomato","Produce",false],["cherry tomatoes","Produce",false],["bell pepper","Produce",false],
+  ["jalapeno","Produce",false],["mushrooms","Produce",false],["spinach","Produce",false],
+  ["kale","Produce",false],["lettuce","Produce",false],["cucumber","Produce",false],
+  ["zucchini","Produce",false],["broccoli","Produce",false],["cauliflower","Produce",false],
+  ["cabbage","Produce",false],["corn","Produce",false],["peas","Produce",false],
+  ["green beans","Produce",false],["eggplant","Produce",false],["avocado","Produce",false],
+  ["cilantro","Produce",false],["parsley","Produce",false],["basil","Produce",false],
+  ["mint","Produce",false],["apple","Produce",false],["banana","Produce",false],
+
+  // Protein
+  ["eggs","Protein",true],["chicken breast","Protein",true],["chicken thighs","Protein",false],
+  ["ground beef","Protein",false],["steak","Protein",false],["pork","Protein",false],
+  ["bacon","Protein",false],["sausage","Protein",false],["shrimp","Protein",false],
+  ["salmon","Protein",false],["white fish","Protein",false],["canned tuna","Protein",false],
+  ["tofu","Protein",false],["black beans","Protein",false],["chickpeas","Protein",false],
+  ["lentils","Protein",false],["kidney beans","Protein",false],
+
+  // Dairy
+  ["butter","Dairy",true],["milk","Dairy",true],["parmesan","Dairy",true],
+  ["cheddar","Dairy",false],["mozzarella","Dairy",false],["feta","Dairy",false],
+  ["cream cheese","Dairy",false],["sour cream","Dairy",false],["heavy cream","Dairy",false],
+  ["yogurt","Dairy",false],["greek yogurt","Dairy",false],
+
+  // Pantry
+  ["rice","Pantry",true],["pasta","Pantry",true],["flour","Pantry",true],
+  ["sugar","Pantry",true],["brown sugar","Pantry",false],["soy sauce","Pantry",true],
+  ["olive oil","Pantry",true],["vegetable oil","Pantry",false],["sesame oil","Pantry",true],
+  ["vinegar","Pantry",true],["rice vinegar","Pantry",false],["balsamic vinegar","Pantry",false],
+  ["canned tomatoes","Pantry",true],["tomato paste","Pantry",false],["chicken stock","Pantry",false],
+  ["coconut milk","Pantry",false],["honey","Pantry",false],["maple syrup","Pantry",false],
+  ["breadcrumbs","Pantry",false],["cornstarch","Pantry",false],["baking powder","Pantry",false],
+  ["baking soda","Pantry",false],["oats","Pantry",false],["quinoa","Pantry",false],
+  ["noodles","Pantry",false],["tortillas","Pantry",false],["bread","Pantry",false],
+  ["peanut butter","Pantry",false],["mayonnaise","Pantry",false],["mustard","Pantry",false],
+  ["ketchup","Pantry",false],["hot sauce","Pantry",false],["sriracha","Pantry",false],
+  ["fish sauce","Pantry",false],["oyster sauce","Pantry",false],["sesame seeds","Pantry",false],
+
+  // Spices
+  ["salt","Spices",true],["black pepper","Spices",true],["chili flakes","Spices",true],
+  ["cumin","Spices",true],["paprika","Spices",true],["smoked paprika","Spices",false],
+  ["garlic powder","Spices",false],["onion powder","Spices",false],["oregano","Spices",false],
+  ["thyme","Spices",false],["rosemary","Spices",false],["bay leaves","Spices",false],
+  ["cinnamon","Spices",false],["nutmeg","Spices",false],["curry powder","Spices",false],
+  ["turmeric","Spices",false],["coriander","Spices",false],["cayenne","Spices",false],
+  ["chili powder","Spices",false],["italian seasoning","Spices",false],
+  ["vanilla extract","Spices",false],
+];
+
+const SEED_PANTRY = CATALOG.map(function (row) {
+  return { name: row[0], have: row[2], category: row[1] };
+});
 
 // Seed on the key's ABSENCE, never on an empty array - otherwise "I have nothing"
 // gets overwritten on every reload.
@@ -267,17 +317,27 @@ document.querySelectorAll(".nav").forEach(function (button) {
 
 /* ---------- View 0: pantry ---------- */
 function renderPantry() {
-  const total  = pantry.length;
   const stocked = pantry.filter(function (i) { return i.have; }).length;
-  el("pantry-summary").textContent = stocked + " of " + total + " stocked";
-  el("pantry-bar").style.width = (total ? (stocked / total) * 100 : 0) + "%";
+  // Counted, not scored - a "24 of 120" bar makes a well-stocked kitchen look empty.
+  el("pantry-summary").textContent = stocked === 1
+    ? "1 ingredient stocked"
+    : stocked + " ingredients stocked";
 
+  const filter = norm(el("pantry-filter").value);
   const container = el("pantry-sections");
   container.innerHTML = "";
+  let shown = 0;
 
   CATEGORIES.forEach(function (category) {
-    const items = pantry.filter(function (i) { return (i.category || "Other") === category; });
+    const items = pantry
+      .filter(function (i) { return (i.category || "Other") === category; })
+      .filter(function (i) { return !filter || norm(i.name).indexOf(filter) !== -1; })
+      .sort(function (a, b) {
+        if (a.have !== b.have) return a.have ? -1 : 1;   // what you own, first
+        return a.name.localeCompare(b.name);
+      });
     if (!items.length) return;
+    shown += items.length;
     const has = items.filter(function (i) { return i.have; }).length;
 
     const section = document.createElement("div");
@@ -285,7 +345,7 @@ function renderPantry() {
     header.className = "flex items-baseline gap-3 mb-3";
     header.innerHTML =
       '<h2 class="text-lg font-semibold">' + esc(category) + '</h2>' +
-      '<span class="text-stone-500 text-sm">' + has + " of " + items.length + '</span>';
+      '<span class="text-stone-500 text-sm">' + has + ' stocked</span>';
 
     const all = document.createElement("button");
     all.className = "text-sm text-stone-500 hover:text-amber-400 ml-auto";
@@ -313,6 +373,14 @@ function renderPantry() {
     section.appendChild(grid);
     container.appendChild(section);
   });
+
+  if (!shown) {
+    const empty = document.createElement("p");
+    empty.className = "text-stone-500";
+    empty.textContent = 'Nothing matches "' + el("pantry-filter").value.trim() +
+      '". Type it in the box above to add it.';
+    container.appendChild(empty);
+  }
 }
 
 function setCategory(category, have) {
@@ -337,6 +405,7 @@ el("pantry-add-btn").onclick = function () {
   addPantryItem(el("pantry-add").value);
   el("pantry-add").value = "";
 };
+el("pantry-filter").addEventListener("input", renderPantry);
 el("pantry-add").addEventListener("keydown", function (event) {
   if (event.key === "Enter") { el("pantry-add-btn").click(); }
 });
