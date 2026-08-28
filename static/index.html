@@ -297,7 +297,11 @@ async function loadStarters() {
     const response = await fetch("recipes.json", { cache: "no-cache" });
     if (!response.ok) return;
     const data = await response.json();
-    if (Array.isArray(data)) { STARTER_VIDEOS = data; renderRecent(); }
+    if (Array.isArray(data)) {
+      STARTER_VIDEOS = data;
+      renderRecent();
+      if (!el("view-library").hidden) renderLibrary();
+    }
   } catch (err) {
     console.warn("starter recipes unavailable", err);
   }
@@ -317,6 +321,15 @@ function savePantrySoon() {
 }
 
 /* ---------- helpers ---------- */
+// The library browses everything: recipes you have opened plus the baked
+// catalogue. Saved copies win, so your step progress is never shadowed.
+function allRecipes() {
+  const savedIds = recipes.map(function (r) { return r.video_id; });
+  return recipes.concat(STARTER_VIDEOS.filter(function (v) {
+    return savedIds.indexOf(v.video_id) === -1;
+  }));
+}
+
 const $  = function (sel) { return document.querySelector(sel); };
 const el = function (id)  { return document.getElementById(id); };
 
@@ -515,7 +528,7 @@ function renderRecent() {
   const unopened = STARTER_VIDEOS.filter(function (v) {
     return saved.indexOf(v.video_id) === -1;
   });
-  unopened.forEach(function (video) {
+  unopened.slice(0, 6).forEach(function (video) {
     starters.appendChild(videoCard(video, function () {
       saveRecipe(video);
       startCheck(video);
@@ -863,7 +876,8 @@ function renderLibrary() {
   const query = norm(el("lib-search").value);
 
   const tagCounts = {}, channelCounts = {};
-  recipes.forEach(function (recipe) {
+  const library = allRecipes();
+  library.forEach(function (recipe) {
     (recipe.tags || []).forEach(function (tag) { tagCounts[tag] = (tagCounts[tag] || 0) + 1; });
     const name = (recipe.channel || {}).name;
     if (name) channelCounts[name] = (channelCounts[name] || 0) + 1;
@@ -890,7 +904,7 @@ function renderLibrary() {
     }));
   });
 
-  const matches = recipes.filter(function (recipe) {
+  const matches = library.filter(function (recipe) {
     // tags are AND-combined
     if (tagFilters.length && !tagFilters.every(function (t) {
       return (recipe.tags || []).indexOf(t) !== -1;
@@ -908,7 +922,10 @@ function renderLibrary() {
   const grid = el("lib-grid");
   grid.innerHTML = "";
   matches.forEach(function (recipe) {
-    const card = videoCard(recipe, function () { openRecipe(recipe); });   // zero API calls
+    const card = videoCard(recipe, function () {                          // zero API calls
+      saveRecipe(recipe);
+      openRecipe(recipe);
+    });
     const meta = document.createElement("div");
     meta.className = "px-3 pb-3 -mt-1 flex flex-wrap gap-1.5 items-center";
     meta.innerHTML = (recipe.tags || []).slice(0, 3).map(function (tag) {
@@ -921,7 +938,7 @@ function renderLibrary() {
     grid.appendChild(card);
   });
 
-  el("lib-empty").hidden = recipes.length !== 0;
+  el("lib-empty").hidden = library.length !== 0;
 }
 
 el("lib-search").addEventListener("input", renderLibrary);
