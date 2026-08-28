@@ -6,6 +6,7 @@
 <title>CookAlong</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
+<script src="config.js"></script>
 <style>
   :root { color-scheme: dark; }
   body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -145,6 +146,10 @@
 "use strict";
 
 /* ---------- storage: every read wrapped, every key versioned ---------- */
+// "" when the API is same-origin; the Space URL when hosted on Firebase.
+const API_BASE = (window.COOKALONG_API_BASE || "").replace(/\/$/, "");
+const api = function (path) { return API_BASE + path; };
+
 const K = {
   pantry:   "cookalong:pantry:v1",
   recipes:  "cookalong:recipes:v1",
@@ -397,7 +402,7 @@ async function loadRecipe(url) {
 
   try {
     const demo = new URLSearchParams(location.search).get("demo") === "1";
-    const response = await fetch("/api/recipe", {
+    const response = await fetch(api("/api/recipe"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: url, demo: demo }),
@@ -515,7 +520,7 @@ function flip(name, have) {
 
 async function fetchShopLinks(items) {
   try {
-    const response = await fetch("/api/shop", {
+    const response = await fetch(api("/api/shop"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items: items.slice(0, 8) }),

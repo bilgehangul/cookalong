@@ -35,44 +35,43 @@ Read only via `os.environ`, never logged, never sent to the browser — the fron
 talks only to `/api/*`. A missing required key is named loudly in the logs at
 startup and returned as a 503 naming the variable.
 
-## Deploy to Cloud Run
+## Architecture
 
-One-time project setup:
+The frontend and backend are deployed separately, because no free Google Cloud
+product will host a Python backend:
 
-```bash
-gcloud projects create cookalong-demo
-gcloud billing projects link cookalong-demo --billing-account=<OPEN_BILLING_ACCOUNT_ID>
-gcloud config set project cookalong-demo
-gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
-  artifactregistry.googleapis.com secretmanager.googleapis.com
-```
+- **Frontend** -> Firebase Hosting (free Spark plan): <https://cookalong.web.app>
+- **Backend** -> Hugging Face Spaces (free, Docker): the FastAPI app
 
-Load the keys into Secret Manager. `./load_secrets.sh` pipes each value from `.env`
-on stdin, so no key value ever appears in a command argument, in shell history, or
-in the gcloud audit log:
+`static/config.js` holds a single line naming the API base. `deploy_firebase.py`
+rewrites it at deploy time, so the same `index.html` works locally (same origin,
+empty base) and in production (cross-origin to the Space).
 
-```bash
-./load_secrets.sh
-```
+Cloud Run and App Engine were both ruled out empirically - each returns
+`INVALID_ARGUMENT: The project must have a billing account attached`. Firebase
+Hosting works billing-free only because it serves static files.
 
-Deploy:
+## Deploy the frontend
 
 ```bash
-gcloud run deploy cookalong \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-secrets "OPENAI_API_KEY=openai-api-key:latest,GEMINI_API_KEY=gemini-api-key:latest,SERPAPI_KEY=serpapi-key:latest,TAVILY_API_KEY=tavily-key:latest" \
-  --memory 512Mi \
-  --timeout 300
+python deploy_firebase.py --api-base https://<your-space>.hf.space
 ```
 
-The 300s timeout matters: extraction plus a repair call can exceed the default.
-Because the server is stateless, scaling needs no thought.
+Uses your existing gcloud credentials via the Hosting REST API - no interactive
+`firebase login` and no CI token needed.
 
-`.gcloudignore` must stay in the repo. Without it `gcloud run deploy --source .`
-falls back to `.gitignore`, which would strip `sample_video.json` out of the image
-and break the `?demo=1` fallback in production.
+## Deploy the backend
+
+The Space builds from the `Dockerfile` at the repo root, which binds
+`${PORT:-7860}`. Set the four keys as **Space secrets** in the Hugging Face UI
+(Settings -> Variables and secrets) so they are never committed anywhere:
+
+```
+OPENAI_API_KEY   GEMINI_API_KEY   SERPAPI_KEY   TAVILY_API_KEY
+```
+
+Optionally set `COOKALONG_ALLOWED_ORIGINS=https://cookalong.web.app` to restrict
+CORS to the deployed frontend.
 
 ## Layout
 

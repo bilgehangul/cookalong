@@ -1,0 +1,13 @@
+{
+  "hosting": {
+    "public": "static",
+    "ignore": ["**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "config.js",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0" }]
+      }
+    ],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+  }
+}

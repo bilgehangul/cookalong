@@ -13,6 +13,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -31,6 +32,19 @@ OPTIONAL_KEYS = ["TAVILY_API_KEY"]
 SHOP_ITEM_CAP = 8
 
 app = FastAPI(title="CookAlong")
+
+# The frontend is served from Firebase Hosting while the API runs elsewhere, so
+# the browser calls this cross-origin. Set COOKALONG_ALLOWED_ORIGINS to a
+# comma-separated list to lock it down; the default is open, which is fine here
+# because the server holds no user data and has no auth to protect.
+_origins = os.environ.get("COOKALONG_ALLOWED_ORIGINS", "*")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"] if _origins.strip() == "*"
+                  else [o.strip() for o in _origins.split(",") if o.strip()],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
+)
 
 # video_id -> parsed recipe. Free, and it protects a 250-search/month SerpApi tier.
 _recipe_cache: dict[str, dict] = {}
