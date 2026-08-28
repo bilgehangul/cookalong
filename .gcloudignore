@@ -1,0 +1,12 @@
+# NOTE: this file must exist. Without it, `gcloud run deploy --source .`
+# falls back to .gitignore, which would strip sample_video.json out of the
+# deployed image and break the ?demo=1 offline fallback.
+.git/
+.gitignore
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+project.md
+README.md
