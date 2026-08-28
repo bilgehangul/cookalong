@@ -26,7 +26,8 @@ the first successful fetch.
 
 | Variable | Used for | Free tier |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | recipe extraction (`claude-sonnet-5`) | pay-as-you-go |
+| `OPENAI_API_KEY` | recipe extraction (primary, `gpt-4.1`) | your OpenAI credits |
+| `GEMINI_API_KEY` | recipe extraction (automatic fallback, `gemini-2.5-flash`) | free tier |
 | `SERPAPI_KEY` | video metadata + transcript | 250 searches/month, **2 per recipe** |
 | `TAVILY_API_KEY` | shopping links (optional) | falls back to a Walmart search |
 
@@ -61,7 +62,7 @@ gcloud run deploy cookalong \
   --source . \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-secrets "ANTHROPIC_API_KEY=anthropic-api-key:latest,SERPAPI_KEY=serpapi-key:latest,TAVILY_API_KEY=tavily-key:latest" \
+  --set-secrets "OPENAI_API_KEY=openai-api-key:latest,GEMINI_API_KEY=gemini-api-key:latest,SERPAPI_KEY=serpapi-key:latest,TAVILY_API_KEY=tavily-key:latest" \
   --memory 512Mi \
   --timeout 300
 ```
@@ -78,7 +79,7 @@ and break the `?demo=1` fallback in production.
 ```
 main.py             FastAPI: /api/recipe, /api/shop, /api/health, static mount
 serpapi_client.py   both SerpApi engines via asyncio.gather; ms -> s at parse time
-llm.py              extraction + the single repair call (structured outputs)
+llm.py              extraction + repair call; OpenAI primary, Gemini fallback
 prompts.py          prompts, tag vocabularies, and the JSON schema
 validate.py         the four coverage checks, merge/re-sort/renumber
 static/index.html   all five views, Tailwind CDN, vanilla JS, localStorage

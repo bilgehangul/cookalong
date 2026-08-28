@@ -24,16 +24,17 @@ put() {                       # put <ENV_VAR_NAME> <secret-name>
   fi
 }
 
-put ANTHROPIC_API_KEY anthropic-api-key
-put SERPAPI_KEY       serpapi-key
-put TAVILY_API_KEY    tavily-key
+put OPENAI_API_KEY openai-api-key
+put GEMINI_API_KEY gemini-api-key
+put SERPAPI_KEY    serpapi-key
+put TAVILY_API_KEY tavily-key
 
 # Cloud Run's runtime service account needs read access to each secret.
 project="$(gcloud config get-value project 2>/dev/null)"
 number="$(gcloud projects describe "$project" --format='value(projectNumber)')"
 member="serviceAccount:${number}-compute@developer.gserviceaccount.com"
 
-for secret in anthropic-api-key serpapi-key tavily-key; do
+for secret in openai-api-key gemini-api-key serpapi-key tavily-key; do
   gcloud secrets describe "$secret" >/dev/null 2>&1 || continue
   gcloud secrets add-iam-policy-binding "$secret" \
     --member="$member" --role=roles/secretmanager.secretAccessor >/dev/null

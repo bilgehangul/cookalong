@@ -26,7 +26,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("cookalong")
 
-REQUIRED_KEYS = ["ANTHROPIC_API_KEY", "SERPAPI_KEY"]
+REQUIRED_KEYS = ["SERPAPI_KEY"]
 OPTIONAL_KEYS = ["TAVILY_API_KEY"]
 SHOP_ITEM_CAP = 8
 
@@ -37,7 +37,11 @@ _recipe_cache: dict[str, dict] = {}
 
 
 def _missing_required():
-    return [k for k in REQUIRED_KEYS if not os.environ.get(k)]
+    """Extraction needs OpenAI or Gemini - either one is enough."""
+    missing = [k for k in REQUIRED_KEYS if not os.environ.get(k)]
+    if not llm.has_openai() and not llm.has_gemini():
+        missing.append("OPENAI_API_KEY or GEMINI_API_KEY")
+    return missing
 
 
 @app.on_event("startup")
@@ -51,7 +55,11 @@ async def check_keys():
         if not os.environ.get(key):
             log.warning("%s not set - shopping links fall back to a Walmart search", key)
     if not missing:
-        log.info("all required keys present")
+        log.info(
+            "keys present; extraction via %s%s",
+            ("OpenAI " + llm.OPENAI_MODEL) if llm.has_openai() else "Gemini only",
+            (", fallback Gemini " + llm.GEMINI_MODEL) if llm.has_openai() and llm.has_gemini() else "",
+        )
 
 
 class RecipeRequest(BaseModel):
