@@ -87,7 +87,19 @@ def main():
         sys.exit("static/ is empty")
     print("files:", ", ".join(sorted(files)))
 
-    version = call("POST", f"{BASE}/sites/{SITE}/versions", body={})["name"]
+    # The REST API does not read firebase.json - hosting config must be sent
+    # with the version. Without this, Firebase serves HTML with max-age=3600
+    # and every deploy stays invisible for an hour.
+    config = {
+        # glob matches the REQUEST path, so "**/*.html" never matches "/".
+        # "**" is the only reliable way to keep the entry point uncached.
+        "headers": [
+            {"glob": "**", "headers": {"Cache-Control": "no-cache, max-age=0"}},
+        ],
+        "rewrites": [{"glob": "**", "path": "/index.html"}],
+    }
+    version = call("POST", f"{BASE}/sites/{SITE}/versions",
+                   body={"config": config})["name"]
     print("version:", version)
 
     populated = call("POST", f"{BASE}/{version}:populateFiles",

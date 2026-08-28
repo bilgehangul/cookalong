@@ -17,41 +17,55 @@
     border: 1px solid transparent; cursor: pointer;
     transition: background-color .12s, border-color .12s, color .12s;
   }
-  .chip-have { background: #f0a83c; color: #1b1410; border-color: #f0a83c; }
-  .chip-have:hover { background: #ffc061; }
-  .chip-out { background: transparent; color: #b6ada4; border-color: #45403a; }
-  .chip-out:hover { border-color: #6d655c; color: #e8e2db; }
-  .chip-need { background: transparent; color: #f0a83c; border-color: #7a5a26; }
+  .chip-have { background: #ffb23f; color: #241a10; border-color: #ffb23f; }
+  .chip-have:hover { background: #ffc76b; }
+  .chip-out { background: transparent; color: #cdc2b5; border-color: #4a4038; }
+  .chip-out:hover { border-color: #8a7f72; color: #f2ece4; }
+  .chip-need { background: transparent; color: #ffb23f; border-color: #8a6a2e; }
   .term {
-    color: #f0a83c; text-decoration: underline; text-underline-offset: 3px;
+    color: #ffb23f; text-decoration: underline; text-underline-offset: 3px;
     font: inherit; background: none; border: 0; padding: 0; cursor: pointer;
   }
-  .term:hover { color: #ffc061; }
+  .term:hover { color: #ffc76b; }
+  .hero-accent {
+    background: linear-gradient(100deg, #ffc76b 0%, #ff9d4d 45%, #ffb23f 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-glow {
+    position: absolute; top: -140px; left: 50%; transform: translateX(-50%);
+    width: min(900px, 100%); height: 340px; pointer-events: none; z-index: -1;
+    background: radial-gradient(ellipse at center,
+                rgba(255,157,77,.20) 0%, rgba(255,157,77,.07) 45%, transparent 72%);
+  }
+  main { position: relative; }
   .step-card { border-left: 3px solid transparent; }
-  .step-active { border-left-color: #f0a83c; background: #241d16; }
+  .step-active { border-left-color: #ffb23f; background: #33291d; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-thumb { background: #3a342e; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb { background: #4a4038; border-radius: 5px; }
 </style>
 </head>
-<body class="bg-[#14110f] text-stone-100 min-h-screen">
+<body class="bg-[#1c1714] text-stone-100 min-h-screen">
 
-<nav class="sticky top-0 z-40 bg-[#14110f]/95 backdrop-blur border-b border-stone-800">
+<nav class="sticky top-0 z-40 bg-[#1c1714]/95 backdrop-blur border-b border-[#3b322a]">
   <div class="max-w-5xl mx-auto px-4 h-16 flex items-center gap-6">
     <span class="text-xl font-bold text-amber-400 mr-2">CookAlong</span>
-    <button data-nav="paste"   class="nav text-lg font-medium text-stone-400 hover:text-stone-100">Cook</button>
-    <button data-nav="library" class="nav text-lg font-medium text-stone-400 hover:text-stone-100">My Recipes</button>
-    <button data-nav="pantry"  class="nav text-lg font-medium text-stone-400 hover:text-stone-100">My Pantry</button>
+    <button data-nav="paste"   class="nav text-lg font-medium text-stone-300 hover:text-stone-100">Cook</button>
+    <button data-nav="library" class="nav text-lg font-medium text-stone-300 hover:text-stone-100">My Recipes</button>
+    <button data-nav="pantry"  class="nav text-lg font-medium text-stone-300 hover:text-stone-100">My Pantry</button>
   </div>
 </nav>
 
 <main class="max-w-5xl mx-auto px-4 py-8">
 
   <section id="view-paste">
-    <h1 class="text-4xl font-bold mb-2">Cook along with any recipe video</h1>
-    <p class="text-stone-400 mb-8 text-lg">Paste a YouTube link. We pull the transcript and turn it into steps you can tap.</p>
+    <div class="hero-glow"></div>
+    <h1 class="text-5xl font-extrabold tracking-tight mb-3 leading-tight">
+      Cook along with <span class="hero-accent">any recipe video</span>
+    </h1>
+    <p class="text-stone-300 mb-8 text-xl">Paste a YouTube link. We pull the transcript and turn it into steps you can tap.</p>
     <div class="flex flex-col sm:flex-row gap-3">
       <input id="url-input" type="url" placeholder="https://www.youtube.com/watch?v=..."
-             class="flex-1 bg-[#1e1a16] border border-stone-700 rounded-xl px-4 py-4 text-lg placeholder-stone-600 focus:outline-none focus:border-amber-500">
+             class="flex-1 bg-[#262019] border border-[#4a4038] rounded-xl px-4 py-4 text-lg placeholder-stone-500 focus:outline-none focus:border-amber-500">
       <button id="load-btn" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-lg rounded-xl px-8 py-4 disabled:opacity-50">Load Recipe</button>
     </div>
     <p id="paste-status" class="mt-4 text-amber-400 text-lg" hidden></p>
@@ -65,13 +79,34 @@
       <h2 class="text-sm uppercase tracking-wide text-stone-500 mb-3">Recently saved</h2>
       <div id="recent-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
     </div>
+
+    <div id="how-it-works" class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div class="bg-[#262019] border border-[#3b322a] rounded-2xl p-6">
+        <div class="text-3xl mb-3">&#127909;</div>
+        <h3 class="font-semibold text-lg mb-1.5">Paste a link</h3>
+        <p class="text-stone-300 leading-relaxed">We read the video&rsquo;s transcript and turn
+          it into ingredients and numbered steps.</p>
+      </div>
+      <div class="bg-[#262019] border border-[#3b322a] rounded-2xl p-6">
+        <div class="text-3xl mb-3">&#129380;</div>
+        <h3 class="font-semibold text-lg mb-1.5">Check your pantry</h3>
+        <p class="text-stone-300 leading-relaxed">See what you already have and what to grab,
+          with shopping links for anything missing.</p>
+      </div>
+      <div class="bg-[#262019] border border-[#3b322a] rounded-2xl p-6">
+        <div class="text-3xl mb-3">&#128293;</div>
+        <h3 class="font-semibold text-lg mb-1.5">Cook along</h3>
+        <p class="text-stone-300 leading-relaxed">Tap any step and the video jumps straight to
+          that moment. Tap a technique to see it done.</p>
+      </div>
+    </div>
   </section>
 
   <section id="view-check" hidden>
     <div id="stage-a" hidden class="py-10">
       <p id="stage-a-count" class="text-center text-stone-500 mb-6 text-lg"></p>
-      <div class="max-w-xl mx-auto bg-[#1e1a16] border border-stone-800 rounded-2xl p-10 text-center">
-        <p class="text-stone-400 mb-2 text-lg">Do you have</p>
+      <div class="max-w-xl mx-auto bg-[#262019] border border-[#3b322a] rounded-2xl p-10 text-center">
+        <p class="text-stone-300 mb-2 text-lg">Do you have</p>
         <p id="stage-a-item" class="text-4xl font-bold mb-10 capitalize"></p>
         <div class="flex flex-col sm:flex-row gap-3 justify-center">
           <button id="have-yes" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-lg rounded-xl px-8 py-4">Yes, I have it</button>
@@ -81,8 +116,8 @@
     </div>
 
     <div id="stage-b" hidden>
-      <h1 class="text-3xl font-bold mb-1">Ingredient check</h1>
-      <p id="check-summary" class="text-stone-400 mb-8 text-lg"></p>
+      <h1 class="text-4xl font-bold tracking-tight mb-1">Ingredient check</h1>
+      <p id="check-summary" class="text-stone-300 mb-8 text-lg"></p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <h2 class="text-lg font-semibold text-emerald-400 mb-4">You have these</h2>
@@ -101,11 +136,11 @@
   </section>
 
   <section id="view-cook" hidden>
-    <div class="sticky top-16 z-30 bg-[#14110f] pt-2 pb-4 -mx-4 px-4">
+    <div class="sticky top-16 z-30 bg-[#1c1714] pt-2 pb-4 -mx-4 px-4">
       <div class="aspect-video w-full rounded-xl overflow-hidden bg-black"><div id="player"></div></div>
     </div>
     <header class="mt-4 mb-8">
-      <h1 id="cook-title" class="text-3xl font-bold"></h1>
+      <h1 id="cook-title" class="text-4xl font-bold tracking-tight"></h1>
       <button id="cook-channel" class="text-amber-400 hover:underline text-lg mt-1"></button>
       <div id="cook-tags" class="flex flex-wrap gap-2 mt-4"></div>
     </header>
@@ -113,9 +148,9 @@
   </section>
 
   <section id="view-library" hidden>
-    <h1 class="text-3xl font-bold mb-6">My Recipes</h1>
+    <h1 class="text-4xl font-bold tracking-tight mb-6">My Recipes</h1>
     <input id="lib-search" type="search" placeholder="Search title, channel, or ingredient"
-           class="w-full bg-[#1e1a16] border border-stone-700 rounded-xl px-4 py-3 mb-5 placeholder-stone-600 focus:outline-none focus:border-amber-500">
+           class="w-full bg-[#262019] border border-[#4a4038] rounded-xl px-4 py-3 mb-5 placeholder-stone-500 focus:outline-none focus:border-amber-500">
     <div id="lib-tags" class="flex flex-wrap gap-2 mb-3"></div>
     <div id="lib-channels" class="flex flex-wrap gap-2 mb-8"></div>
     <div id="lib-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
@@ -123,17 +158,17 @@
   </section>
 
   <section id="view-pantry" hidden>
-    <h1 class="text-3xl font-bold mb-2">My Pantry</h1>
-    <p id="pantry-summary" class="text-stone-400 text-lg mb-8"></p>
+    <h1 class="text-4xl font-bold tracking-tight mb-2">My Pantry</h1>
+    <p id="pantry-summary" class="text-stone-300 text-lg mb-8"></p>
     <div class="flex flex-col sm:flex-row gap-3 mb-4">
       <input id="pantry-add" type="text" placeholder="Add an ingredient&hellip;"
-             class="flex-1 bg-[#1e1a16] border border-stone-700 rounded-xl px-4 py-3 placeholder-stone-600 focus:outline-none focus:border-amber-500">
+             class="flex-1 bg-[#262019] border border-[#4a4038] rounded-xl px-4 py-3 placeholder-stone-500 focus:outline-none focus:border-amber-500">
       <button id="pantry-add-btn" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold rounded-xl px-6 py-3">Add</button>
     </div>
     <input id="pantry-filter" type="search" placeholder="Filter the list&hellip;"
-           class="w-full bg-[#1e1a16] border border-stone-700 rounded-xl px-4 py-3 mb-10 placeholder-stone-600 focus:outline-none focus:border-amber-500">
+           class="w-full bg-[#262019] border border-[#4a4038] rounded-xl px-4 py-3 mb-10 placeholder-stone-500 focus:outline-none focus:border-amber-500">
     <div id="pantry-sections" class="space-y-8"></div>
-    <footer class="mt-16 pt-6 border-t border-stone-800">
+    <footer class="mt-16 pt-6 border-t border-[#3b322a]">
       <button id="reset-all" class="text-stone-600 hover:text-red-400 text-sm">Reset all data</button>
     </footer>
   </section>
@@ -300,7 +335,7 @@ function showView(name) {
   document.querySelectorAll(".nav").forEach(function (button) {
     const on = button.dataset.nav === name;
     button.classList.toggle("text-amber-400", on);
-    button.classList.toggle("text-stone-400", !on);
+    button.classList.toggle("text-stone-300", !on);
   });
   window.scrollTo(0, 0);
 }
@@ -427,7 +462,7 @@ el("reset-all").onclick = function () {
 /* ---------- View 1: paste ---------- */
 function videoCard(recipe, onClick) {
   const card = document.createElement("button");
-  card.className = "text-left bg-[#1e1a16] border border-stone-800 rounded-xl overflow-hidden hover:border-amber-600 transition";
+  card.className = "text-left bg-[#262019] border border-[#3b322a] rounded-xl overflow-hidden hover:border-amber-600 transition";
   card.innerHTML =
     (recipe.thumbnail
       ? '<img src="' + esc(recipe.thumbnail) + '" alt="" class="w-full aspect-video object-cover">'
@@ -447,6 +482,7 @@ function renderRecent() {
     grid.appendChild(videoCard(recipe, function () { openRecipe(recipe); }));
   });
   el("recent-row").hidden = recipes.length === 0;
+  el("how-it-works").hidden = recipes.length > 0;
 
   const starters = el("starter-grid");
   starters.innerHTML = "";
@@ -610,7 +646,7 @@ async function fetchShopLinks(items) {
       if (!box) return;
       box.innerHTML = (data.results[item] || []).map(function (hit) {
         return '<a href="' + esc(hit.url) + '" target="_blank" rel="noopener" ' +
-               'class="block text-stone-400 hover:text-amber-400 truncate">' +
+               'class="block text-stone-300 hover:text-amber-400 truncate">' +
                esc(hit.title) + ' <span class="text-stone-600">' + esc(hit.source) + '</span></a>';
       }).join("");
     });
@@ -723,7 +759,7 @@ function renderSteps(recipe) {
 
   (recipe.steps || []).forEach(function (step) {
     const card = document.createElement("div");
-    card.className = "step-card bg-[#1c1815] rounded-xl p-5 pl-6 cursor-pointer hover:bg-[#221d18]";
+    card.className = "step-card bg-[#262019] border border-[#3b322a] rounded-xl p-5 pl-6 cursor-pointer hover:bg-[#2f2820] hover:border-[#4a4038]";
 
     const checked = done.indexOf(step.index) !== -1;
     card.innerHTML =
@@ -844,7 +880,7 @@ function renderLibrary() {
     const meta = document.createElement("div");
     meta.className = "px-3 pb-3 -mt-1 flex flex-wrap gap-1.5 items-center";
     meta.innerHTML = (recipe.tags || []).slice(0, 3).map(function (tag) {
-      return '<span class="px-2 py-0.5 rounded-full bg-stone-800 text-stone-400 text-xs">' +
+      return '<span class="px-2 py-0.5 rounded-full bg-stone-800 text-stone-300 text-xs">' +
              esc(tag) + '</span>';
     }).join("") +
       '<span class="text-stone-600 text-xs ml-auto">' +
