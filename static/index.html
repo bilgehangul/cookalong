@@ -407,7 +407,17 @@ async function loadRecipe(url) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: url, demo: demo }),
     });
-    const data = await response.json();
+
+    // Static hosting answers /api/* with the SPA shell, which would otherwise
+    // surface as an opaque JSON parse error. Say what is actually wrong.
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      throw new Error(API_BASE
+        ? "The API at " + API_BASE + " did not return JSON. Is the backend running?"
+        : "No backend is connected to this page yet.");
+    }
     if (!response.ok) throw new Error(data.error || "Could not load that video.");
     saveRecipe(data);
     startCheck(data);
